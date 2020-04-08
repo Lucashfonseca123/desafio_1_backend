@@ -33,6 +33,15 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+function validateRepositoryId(request, response, next) {
+  const { id } = request.params;
+
+  if (!isUuid(id)) {
+    return response.status(400).json({ error: 'Invalid repository ID.' })
+  }
+  next();
+}
+
 const repositories = [];
 
 app.get("/repositories", (request, response) => {
@@ -54,12 +63,12 @@ app.post("/repositories", (request, response) => {
   }
 
   repositories.push(objectRepositores);
-  return response.json(repositories);
+  return response.json(objectRepositores);
 });
 
-app.put("/repositories/:id", (request, response) => {
+app.put("/repositories/:id", validateRepositoryId, (request, response) => {
   const { id } = request.params;
-  const { title, url, techs, likes } = request.body;
+  const { title, url, techs } = request.body;
 
   const sameId = repositories.findIndex(repo => repo.id === id);
 
@@ -69,28 +78,33 @@ app.put("/repositories/:id", (request, response) => {
     })
   }
 
-  const repo = { id, title, url, techs, likes };
+  const likes = repositories[sameId].likes;
+
+  const repo = { id, title, url, techs };
+  repo.likes = likes;
+
   repositories[sameId] = repo;
 
   return response.json(repo);
 });
 
-app.delete("/repositories/:id", (req, res) => {
-  const { id } = req.params;
+app.delete("/repositories/:id", validateRepositoryId, (request, response) => {
+  const { id } = request.params;
 
   const sameId = repositories.findIndex(repo => repo.id === id);
 
   if (sameId < 0) {
-    return res.status(400).json({
+    return response.status(400).json({
       error: "Repositories not found"
-    })
+    });
   }
 
   repositories.splice(sameId, 1);
-  return res.status(204).send();
+
+  return response.status(204).send();
 });
 
-app.post("/repositories/:id/like", (request, response) => {
+app.post("/repositories/:id/like", validateRepositoryId, (request, response) => {
   const { id } = request.params;
 
   const sameId = repositories.findIndex(repo => repo.id === id);
@@ -101,17 +115,10 @@ app.post("/repositories/:id/like", (request, response) => {
     })
   }
 
-  let { title, url, techs, likes } = repositories[sameId];
-  likes++;
-
-  let repo = {
-    id, title, url, techs, likes
-  };
-
-  repositories[sameId] = repo;
+  repositories[sameId].likes++;
 
   console.log(repositories);
-  return response.json(repositories);
+  return response.json(repositories[sameId]);
 });
 
 module.exports = app;
