@@ -54,7 +54,6 @@ app.post("/repositories", (request, response) => {
   }
 
   repositories.push(objectRepositores);
-  console.log(repositories);
   return response.json(repositories);
 });
 
@@ -82,7 +81,7 @@ app.delete("/repositories/:id", (req, res) => {
   const sameId = repositories.findIndex(repo => repo.id === id);
 
   if (sameId < 0) {
-    return res.json({
+    return res.status(400).json({
       error: "Repositories not found"
     })
   }
@@ -93,6 +92,7 @@ app.delete("/repositories/:id", (req, res) => {
 
 app.post("/repositories/:id/like", (request, response) => {
   const { id } = request.params;
+
   const sameId = repositories.findIndex(repo => repo.id === id);
 
   if (sameId < 0) {
